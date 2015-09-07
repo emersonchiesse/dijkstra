@@ -22,6 +22,7 @@ public:
 	              long style = wxDEFAULT_DIALOG_STYLE );
 
 	wxTextCtrl * raioText;
+	wxTextCtrl * raioNodoText;
 	wxTextCtrl * showPesosText;
 
 	std::string  GetText();
@@ -29,6 +30,7 @@ public:
 private:
 
 	void OnOk( wxCommandEvent & event );
+	void OnPaint(wxPaintEvent& event);
 
 	std::string raio;
 

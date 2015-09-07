@@ -34,12 +34,12 @@ public:
 	void list();
 	int procura(string id);
 	int procura(int x, int y);
-	void addNodo(Nodo n);
+	void addNodo(Nodo *n);
 	void delNodo(string id);
 	int getCusto (string a, string b);
 	const std::vector<Vertice>& getVizinhos (string id);
 
-	void criaRandom (int);
+	void criaRandom (int count, int raio);
 	void caminhomaiscurto (string n1, string n2);
 
 	const std::vector<Nodo>& getNodos() const {

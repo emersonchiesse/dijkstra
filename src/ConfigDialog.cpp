@@ -1,5 +1,6 @@
 
 #include "ConfigDialog.h"
+#include "wx/wx.h"
 #include "wx/button.h"
 
 BEGIN_EVENT_TABLE(ConfigDialog, wxDialog)
@@ -11,6 +12,8 @@ ConfigDialog::ConfigDialog ( wxWindow * parent, wxWindowID id, const wxString & 
                            const wxPoint & position, const wxSize & size, long style )
 : wxDialog( parent, id, title, position, size, style)
 {
+	Connect(wxEVT_PAINT, wxPaintEventHandler(ConfigDialog::OnPaint));
+
 	wxString dimensions = "", s;
 	wxPoint p;
 	wxSize  sz, sizebox;
@@ -27,9 +30,18 @@ ConfigDialog::ConfigDialog ( wxWindow * parent, wxWindowID id, const wxString & 
 	dimensions.append(s);
 	dimensions.append("");
 
+	// edit boxes
+//	dc.DrawText(wxString::Format(_T("%d"), peso),
+//							((x+x1)/2)*MULTIPLIER,
+//							size.y-((y+y1)/2)*MULTIPLIER);
 	raioText = new wxTextCtrl ( this, -1, dimensions, wxPoint(size.GetWidth()/2, 2),
 			sizebox, wxTE_MULTILINE );
 
+	raioNodoText = new wxTextCtrl ( this, -1, dimensions,
+			wxPoint(size.GetWidth()/2, 2 + sizebox.y),
+				sizebox, wxTE_MULTILINE );
+
+	// botoes
 	p.y += sz.GetHeight() + 10;
 	wxButton * b = new wxButton( this, wxID_OK, _("OK"), p, wxDefaultSize );
 	p.x += 110;
@@ -49,4 +61,11 @@ void ConfigDialog::OnOk(wxCommandEvent& event) {
 	EndModal(wxID_OK);
 	Destroy();
 
+}
+
+void ConfigDialog::OnPaint(wxPaintEvent& event) {
+    wxPaintDC dc(this);
+    dc.SetBackgroundMode(wxTRANSPARENT);
+    dc.DrawText(wxT("raio nodo"), 10, 10);
+    dc.DrawText(wxT("raio nodo"), 10, 30);
 }

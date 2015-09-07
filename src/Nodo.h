@@ -10,24 +10,31 @@
 
 #include <vector>
 #include <string>
+#include <pthread.h>
 
 #include "Vertice.h"
 
 using namespace std;
 
+//#define NUM_THREADS 4
 
 class Nodo {
 private:
 	std::string id;
 	std::vector<Vertice> vizinhos;
 	int x, y;
+	pthread_t threadSendHello;
+	pthread_t threadReceiveHello;
 
 public:
 	Nodo(string i);
 	Nodo(string i, int x, int y);
 	virtual ~Nodo();
 
+//	static void *sendHello();
+
 	void addVizinho (Vertice v);
+	void startThreads();
 
 	const std::string& getId() const {
 		return id;
@@ -37,8 +44,12 @@ public:
 		this->id = id;
 	}
 
-	const std::vector<Vertice>& getVizinhos() const {
+	 std::vector<Vertice>& getVizinhos()  {
 		return vizinhos;
+	}
+
+	const std::vector<Vertice>* getVizinhos2() const {
+		return &vizinhos;
 	}
 
 	void setVizinhos(const std::vector<Vertice>& vizinhos) {
@@ -60,6 +71,7 @@ public:
 		this->y = y;
 	}
 
+	void sendHELLO();
 
 };
 

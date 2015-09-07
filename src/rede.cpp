@@ -139,6 +139,7 @@ void MyFrame::OnPaint(wxPaintEvent& event) {
     wxSize size = GetClientSize();
     std::vector<Nodo> nodos = grafo.getNodos();
 
+    // desenha nodos
     for (int i=0; i< nodos.size(); i++)
     {
     	int x = nodos[i].getX();
@@ -160,7 +161,7 @@ void MyFrame::OnPaint(wxPaintEvent& event) {
 		}
 
     	// desenha nodos
-    	dc.DrawCircle(x*MULTIPLIER, size.y-y*MULTIPLIER, 5);
+    	dc.DrawCircle(x*MULTIPLIER, size.y-y*MULTIPLIER, config.getRaioNodo());
     	dc.DrawText(wxString::FromUTF8(id.c_str()),
     			x*MULTIPLIER+5, size.y-y*MULTIPLIER+5);
 
@@ -409,10 +410,14 @@ void MyFrame::OnRandom(wxCommandEvent& event) {
 		SetStatusText(_("The about box was cancelled.\n"));
 	else
 	{
+		string result = aboutDialog.GetText();
+		int count = atoi(result.c_str());
+		if (count <= 0)
+			return;
+
 		grafo.init();
 
-		string result = aboutDialog.GetText();
-		grafo.criaRandom(atoi(result.c_str()));
+		grafo.criaRandom(count, config.getRaioGrafo());
 
 		this->Refresh(true);
 		this->Update();
@@ -422,7 +427,7 @@ void MyFrame::OnRandom(wxCommandEvent& event) {
 
 void MyFrame::OnConfig(wxCommandEvent& event) {
     ConfigDialog c ( this, -1, _("Digite numero de nós"),
-    	                          wxPoint(100, 100), wxSize(200, 200) );
+    	                          wxPoint(100, 100), wxSize(300, 300) );
 	if ( c.ShowModal() != wxID_OK )
 		SetStatusText(_("The about box was cancelled.\n"));
 	else

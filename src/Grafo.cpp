@@ -18,11 +18,12 @@
 using namespace std;
 
 Grafo::Grafo() {
-	raio = 5;
 }
 
 Grafo::~Grafo() {
 	//pthread_exit(NULL);
+//	for (int i = 0; i < nodos.size(); i++)
+//		delete &nodos[i];
 }
 
 vector<string> tokenizeString(const string& str, const string& delimiters)
@@ -76,7 +77,7 @@ void Grafo::load(string arq) {
 			  if (procura(v[i]) < 0)
 			  {
 				  cout << "inserindo nodo: " << v[i] << "\n";
-				  Nodo n (v[i]);
+				  Nodo *n = new Nodo(v[i]);
 				  this->addNodo(n);
 			  }
 	      }
@@ -200,8 +201,8 @@ int Grafo::procura(int x, int y) {
 }
 
 
-void Grafo::addNodo(Nodo n) {
-	nodos.push_back(n);
+void Grafo::addNodo(Nodo *n) {
+	nodos.push_back(*n);
 }
 
 int min (int a, int b)
@@ -401,8 +402,9 @@ void *threadrun(void *threadid)
 
 
 #define PI 3.14159265
-void Grafo::criaRandom(int count) {
+void Grafo::criaRandom(int count, int r) {
 
+	raio = r;
 	int x, y;
 	float ang = 360/count;
 
@@ -419,13 +421,13 @@ void Grafo::criaRandom(int count) {
 		string s = string(Result);
 
 		// ajusta coordenadas de tela, desloca para cima e direita
-		Nodo n (s, x+2*raio, y+2*raio);
+		Nodo *n = new Nodo(s, x+2*raio, y+2*raio);
 		this->addNodo(n);
 
-		int rc = pthread_create(&threads[i], NULL,
-				threadrun, (void *)i);
-	  if (rc)
-		 cout << "Error:unable to create thread," << rc << endl;
+//		int rc = pthread_create(&threads[i], NULL,
+//				threadrun, (void *)i);
+//	  if (rc)
+//		 cout << "Error:unable to create thread," << rc << endl;
 
 	  cout << "adicionado nodo: " << s << endl;
 	}
@@ -467,6 +469,11 @@ void Grafo::criaRandom(int count) {
 
 			cout << "destino: " << s << endl;
 		}
+	}
+
+	for (int i = 0; i < count; i++)
+	{
+		nodos[i].startThreads();
 	}
 
 }
