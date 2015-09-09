@@ -137,14 +137,15 @@ void MyFrame::OnPaint(wxPaintEvent& event) {
 //    cout << "app.onpaint\n";
 
     wxSize size = GetClientSize();
-    std::vector<Nodo> nodos = grafo.getNodos();
+    std::vector<Nodo> *nodos = &grafo.getNodos();
 
     // desenha nodos
-    for (int i=0; i< nodos.size(); i++)
+    vector<Nodo>::iterator i;
+    for (i=nodos->begin(); i< nodos->end(); i++)
     {
-    	int x = nodos[i].getX();
-    	int y = nodos[i].getY();
-    	string id = nodos[i].getId();
+    	int x = (*i).getX();
+    	int y = (*i).getY();
+    	string id = (*i).getId();
 
     	// escolhe cor, se estiver selecionado
     	if (std::find(nodosSelecionados.begin(),
@@ -166,16 +167,20 @@ void MyFrame::OnPaint(wxPaintEvent& event) {
     			x*MULTIPLIER+5, size.y-y*MULTIPLIER+5);
 
     	// desenha vertices
-    	std::vector<Vertice> vizinhos = nodos[i].getVizinhos();
-    	for (int j=0; j<vizinhos.size(); j++)
+//    	std::vector<Vertice> vizinhos = nodos[i]->getVizinhos();
+//    	for (int j=0; j<vizinhos.size(); j++)
+    	vector<Vertice> *vizinhos = &(*i).getVizinhos();
+		vector<Vertice>::const_iterator v;
+		for (v = vizinhos->begin(); v != vizinhos->end(); v++)
     	{
     		//cout << "vizinho " << v << "\n";
 
-    		string v=vizinhos[j].getId();
-    		int peso=vizinhos[j].getCusto();
-    		int ind = grafo.procura(v);
-    		int x1 = nodos[ind].getX();
-    		int y1 = nodos[ind].getY();
+    		string s=(*v). getId();
+    		int peso=(*v).getCusto();
+    		int ind = grafo.procura(s);
+    		Nodo n = nodos->data()[ind];
+    		int x1 = n.getX();
+    		int y1 = n.getY();
     		dc.DrawLine(x*MULTIPLIER, size.y-y*MULTIPLIER,
     				x1*MULTIPLIER, size.y-y1*MULTIPLIER);
 

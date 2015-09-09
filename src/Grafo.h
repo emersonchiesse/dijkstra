@@ -22,6 +22,7 @@ private:
 	std::vector<Nodo> nodos;
 	int raio;
 	pthread_t threads[NUM_THREADS];
+	std::vector<pthread_mutex_t> mutex;
 
 public:
 	Grafo();
@@ -42,7 +43,7 @@ public:
 	void criaRandom (int count, int raio);
 	void caminhomaiscurto (string n1, string n2);
 
-	const std::vector<Nodo>& getNodos() const {
+	std::vector<Nodo>& getNodos() {
 		return nodos;
 	}
 };

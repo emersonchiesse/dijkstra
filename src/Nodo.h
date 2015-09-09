@@ -13,10 +13,13 @@
 #include <pthread.h>
 
 #include "Vertice.h"
+#include "Tabela.h"
 
 using namespace std;
 
 //#define NUM_THREADS 4
+
+vector<string> tokenizeString(const string& str, const string& delimiters);
 
 class Nodo {
 private:
@@ -25,6 +28,8 @@ private:
 	int x, y;
 	pthread_t threadSendHello;
 	pthread_t threadReceiveHello;
+	vector<Tabela> tabela;
+
 
 public:
 	Nodo(string i);
@@ -32,9 +37,12 @@ public:
 	virtual ~Nodo();
 
 //	static void *sendHello();
+	pthread_mutex_t *mutex_hello;
 
 	void addVizinho (Vertice v);
 	void startThreads();
+	void updateTabela(string);
+	bool tabelaExiste(string n);
 
 	const std::string& getId() const {
 		return id;
@@ -47,6 +55,8 @@ public:
 	 std::vector<Vertice>& getVizinhos()  {
 		return vizinhos;
 	}
+
+	string getVizinhosStr();
 
 	const std::vector<Vertice>* getVizinhos2() const {
 		return &vizinhos;

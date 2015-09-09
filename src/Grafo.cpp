@@ -420,8 +420,14 @@ void Grafo::criaRandom(int count, int r) {
 		sprintf ( Result, "%d", i );
 		string s = string(Result);
 
+		// inicia mutex
+		pthread_mutex_t *m = new pthread_mutex_t();
+		pthread_mutex_init(m, NULL);
+		mutex.push_back(*m);
+
 		// ajusta coordenadas de tela, desloca para cima e direita
 		Nodo *n = new Nodo(s, x+2*raio, y+2*raio);
+		n->mutex_hello = m;
 		this->addNodo(n);
 
 //		int rc = pthread_create(&threads[i], NULL,
