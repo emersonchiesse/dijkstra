@@ -23,6 +23,7 @@ public:
 
 	wxTextCtrl * dialogText;
 	std::string  GetText();
+	void setText (std::string);
 
 private:
 

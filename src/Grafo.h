@@ -42,6 +42,7 @@ public:
 
 	void criaRandom (int count, int raio);
 	void caminhomaiscurto (string n1, string n2);
+	string getRotas(string nodo);
 
 	std::vector<Nodo>& getNodos() {
 		return nodos;

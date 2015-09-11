@@ -221,8 +221,9 @@ void Grafo::init() {
 }
 
 void Grafo::caminhomaiscurto(string n1, string n2) {
-	vector<string> N, P;
-	vector<int> D;
+	vector<string> N; // conjunto dos nodos com custo conhecido
+	vector<string> P; // nodo anterior (p(v))
+	vector<int> D;  // distancias calculadas
 	int nnodos = nodos.size();
 
 	int iu = procura(n1);
@@ -352,10 +353,10 @@ void Grafo::caminhomaiscurto(string n1, string n2) {
 	cout << "\nTabela de custos do nodo " << n1 << ": " << endl;
 
 	// imprime N
-//	cout << "N: ";
-//	for (int i = iu; i < ifinal; i++)
-//		cout << nodos[i].getId() << " ";
-//	cout << "\n";
+	cout << "N: ";
+	for (int i = iu; i < ifinal; i++)
+		cout << nodos[i].getId() << " ";
+	cout << "\n";
 
 
 	cout << "custo para nodo " << n2 << ": " << D[ifinal] << endl;
@@ -373,19 +374,21 @@ void Grafo::caminhomaiscurto(string n1, string n2) {
 	cout << "caminho de " << n1 << " para " << n2 << ":" << endl;
 
 	bool sai = false;
-	vector<int> path;
+	vector<string> path;
 	int n0 = 0;
 	n0 = procura (P[ifinal]);
 	int nf = procura(P[n0]);
-	path.push_back(n0);
+	path.push_back(n2);
+	path.push_back(nodos[n0].getId());
 	while (!sai)
 	{
 		n0 = procura(P[n0]);
 		if (n0 == iu)
 			break;
-		path.push_back(n0);
+		path.push_back(nodos[n0].getId());
 
 	}
+	path.push_back(n1);
 	for (int i = path.size()-1; i >= 0; i--)
 		cout << path[i] << " ";
 	cout << endl;
@@ -478,9 +481,10 @@ void Grafo::criaRandom(int count, int r) {
 	}
 
 	for (int i = 0; i < count; i++)
-	{
-		nodos[i].startThreads();
-	}
+		nodos[i].startReadThread();
+
+	for (int i = 0; i < count; i++)
+		nodos[i].startSendThread();
 
 }
 
@@ -524,3 +528,12 @@ const std::vector<Vertice>& Grafo::getVizinhos(string id) {
 	//return NULL;
 }
 
+string Grafo::getRotas(string nodo) {
+	int ind = procura (nodo);
+	if (ind >= 0)
+	{
+		return nodos[ind].getTabela(nodo);
+	}
+
+	return "";
+}

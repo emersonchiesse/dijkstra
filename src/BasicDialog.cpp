@@ -53,3 +53,8 @@ void LinhasDialog::OnOk(wxCommandEvent& event) {
 	Destroy();
 
 }
+
+void LinhasDialog::setText(std::string str) {
+	dialogText->SetValue(wxString(str.c_str()));
+
+}

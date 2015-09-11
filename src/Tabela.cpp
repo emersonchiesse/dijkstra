@@ -11,7 +11,7 @@
 Tabela::~Tabela() {
 }
 
-void Tabela::addVizinho(string nodo, string v) {
+void Tabela::addVizinho(string v) {
 	vizinhos.push_back(v);
 }
 

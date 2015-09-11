@@ -23,53 +23,56 @@ void log (string id, const string msg)
 	cout << "[nodo " << id << "] " <<  msg << endl;
 }
 
-Nodo::Nodo(string i) {
-	id =i;
-	x=0;
-	y=0;
-}
 
-void *sendHello(void *arg)
-{
+void *sendHello(void *arg) {
 	Nodo* nodo = ((Nodo*)arg);
 	string id = nodo->getId();
-
 	string namedpipe = "/tmp/pipe" + id;
-
 	string msg;
-
+//	nodo->estadoThread = THREAD_RUN;
 	bool sai = false;
 	while (!sai)
 	{
-//		Nodo* nodo2 = ((Nodo*)arg);
-		//nodo2->sendHELLO();
-		vector<Vertice> *vizinhos = &nodo->getVizinhos();
-		std::ostringstream s;
-		s << "sending hello, #vizinhos: " << vizinhos->size();
-		log (id, s.str());
-
-		vector<Vertice>::const_iterator i;
-		for (i = vizinhos->begin(); i != vizinhos->end(); i++)
-		{
-			//log (id, (*i).getId());
-			string namedpipe = "/tmp/pipe" + (*i).getId();
+//		switch (nodo->estadoThread)
+//		{
+//		case THREAD_RUN:
+//		{
+			std::ostringstream s;
+			pthread_mutex_lock(nodo->mutex_hello);
+			vector<Vertice> *vizinhos = &nodo->getVizinhos();
+			//s << "sending hello, #vizinhos: " << vizinhos->size();
+			//log (id, s.str());
 
 			msg = nodo->getVizinhosStr();
-			pthread_mutex_lock(nodo->mutex_hello);
-			int myPipe = open(namedpipe.c_str(), O_WRONLY);
-			if (myPipe >= 0 )
+
+			vector<Vertice>::const_iterator i;
+			for (i = vizinhos->begin(); i != vizinhos->end(); i++)
 			{
-				write(myPipe, msg.c_str(), msg.size());
-				close(myPipe);
-				log (id, "sent 'hello' to " + (*i).getId() + " msg: " + msg);
+				//log (id, (*i).getId());
+				string namedpipe = "/tmp/pipe" + (*i).getId();
+
+				int myPipe = open(namedpipe.c_str(), O_RDWR);
+				if (myPipe >= 0 )
+				{
+					//flush(myPipe);
+					write(myPipe, msg.c_str(), msg.size());
+					close(myPipe);
+					log (id, "sent 'hello' to " + (*i).getId() + " msg: " + msg);
+				}
+				else
+					log (id, "open pipe failed");
 			}
-			else
-				log (id, "open pipe failed");
 			pthread_mutex_unlock(nodo->mutex_hello);
-		}
 
-
-		sleep(5);
+			sleep(rand() % 5);
+//		}
+//			break;
+//		case THREAD_PAUSE:
+//			sleep (1);
+//			break;
+//		default:
+//			break;
+//		}
 	}
 	return 0;
 }
@@ -80,13 +83,27 @@ void *receiveHello(void *arg)
 {
 	Nodo* nodo = static_cast<Nodo*>(arg);
 	string id = nodo->getId();
-	bool sai = false;
 
 	string namedpipe = "/tmp/pipe" + id;
-	unlink(namedpipe.c_str());
-	 mknod(namedpipe.c_str(), S_IFIFO | S_IRUSR | S_IWUSR, 0);
-	 int myPipe = open(namedpipe.c_str(), O_RDONLY);
+	int ret = unlink(namedpipe.c_str());
+	if (ret < 0)
+		log(id, "unlink com erro " + namedpipe);
 
+	 ret = mknod(namedpipe.c_str(), S_IFIFO | S_IRUSR | S_IWUSR, 0);
+	 if (ret < 0)
+	 		log(id, "mknod com erro");
+
+	 int myPipe = open(namedpipe.c_str(), O_RDONLY);
+	 if (myPipe < 0)
+	 {
+		 log(id, "error opening pipe " + namedpipe);
+		 return 0;
+	 }
+
+
+	char buffer[500];
+
+	bool sai = false;
 	while (!sai)
 	{
 		log(id, "checking hello ");
@@ -95,15 +112,15 @@ void *receiveHello(void *arg)
 		//pthread_mutex_lock(nodo->mutex_hello);
 		if (myPipe >= 0)
 		{
-			char buffer[21];
-			int length = read(myPipe, buffer, 20);
+			int length = read(myPipe, buffer, 500);
 			buffer[length] = '\0';
 			log (id, "received: " +  string(buffer));
+			pthread_mutex_lock(nodo->mutex_hello);
 			nodo->updateTabela(string(buffer));
+			pthread_mutex_unlock(nodo->mutex_hello);
 		}
-		//pthread_mutex_unlock(nodo->mutex_hello);
 
-		sleep(10);
+		sleep(4);
 	}
 	close(myPipe);
 	unlink(namedpipe.c_str());
@@ -112,10 +129,18 @@ void *receiveHello(void *arg)
 }
 }
 
+Nodo::Nodo(string i) {
+	id =i;
+	x=0;
+	y=0;
+//	estadoThread = THREAD_RUN;
+}
+
 Nodo::Nodo(string i, int x, int y) {
 	id=i;
 	this->x=x;
 	this->y=y;
+//	estadoThread = THREAD_RUN;
 }
 
 Nodo::~Nodo() {
@@ -167,15 +192,20 @@ void Nodo::sendHELLO() {
 
 }
 
-void Nodo::startThreads() {
+void Nodo::startReadThread() {
 	int rc;
+	log(id, "starting receive thread");
 	rc = pthread_create(&threadReceiveHello, NULL,
 			receiveHello,
 			(void *)this);
 	if (rc){
 	         cout << "Error:unable to create receive thread," << rc << endl;
 	}
+}
 
+void Nodo::startSendThread() {
+		int rc;
+	log(id, "starting send thread");
 	rc = pthread_create(&threadSendHello, NULL,
 			sendHello,
 			(void *)this);
@@ -187,13 +217,13 @@ void Nodo::startThreads() {
 
 string Nodo::getVizinhosStr() {
 	std::ostringstream s;
-	s << getId() << "|" << vizinhos.size();
+	s << getId() << "v" << vizinhos.size();
 	vector<Vertice>::const_iterator v;
 	for (v = vizinhos.begin(); v != vizinhos.end(); v++)
 	{
 		s << "|" << (*v).getId();
 	}
-	s << "|";
+	s << ".";
 
 	return s.str();
 }
@@ -203,48 +233,76 @@ void Nodo::updateTabela(string msg) {
 	// atualiza a vizinhanca do vizinho
 	// se o vizinho nodo nao esta na tabela, insere
 	// senao atualiza
+
+	if (msg.size()==0)
+		return;
+
 	string nodo = "";
 	vector<string> vizinhos;
-	int count;
+
+	// msg: nv#|n1|...|nz.
+	// se nao tem . nem 'v', eh mensagem mal formada
+	if ((msg.find('v')==string::npos) ||
+		(msg.find('.')==string::npos)
+		// || (msg.find('.')!=msg.length()-1)
+		)
+		{
+			log(id, "mensagem truncada");
+			return;
+		}
 
 	// extrai nodo
-	 vector<string> v = tokenizeString (msg, "|");
-	 if (v.size() == 0)
-	 {
-		 cout << "mensagem vazia." << endl;
-		 return;
-	 }
-
-	 if (v.size() == 1)
-	 {
-		 cout << "sem vizinhos." << endl;
-		 return;
-	 }
-
-	 nodo = v[0];
-	 count = std::atoi (v[1].c_str());
-
-	 log(nodo, "vizinhos: " + v[1]);
-	 for (int i = 2; i < count; i++)
-	 {
-		 vizinhos.push_back(v[i]);
-		 log (nodo, v[i]);
-	 }
-
-	// extrai vizinhos
-
-	bool existe = tabelaExiste(nodo);
-	if (!existe)
+	vector<string> m = tokenizeString (msg, ".");
+	vector<string>::iterator i;
+	for (i = m.begin(); i!= m.end(); i++)
 	{
+		vector<string> v1 = tokenizeString ((*i), "v");
+		nodo = v1[0];
+
+		log(nodo, "vizinhos: " + v1[1]);
+		vector<string> v = tokenizeString (v1[1], "|");
+		int count = std::atoi (v[0].c_str());
+
+		//v = tokenizeString (msg, "|");
+		if (v.size() == 0)
+		{
+			log(id, "mensagem vazia.");
+			return;
+		}
+
+		if (v.size() == 1)
+		{
+			log(id, "sem vizinhos (msg: " + v[1] + ")");
+			return;
+		}
+
+		if (v.size() <= count)
+		{
+			log(id, "mensagem truncada");
+			return;
+		}
+
+		// extrai vizinhos
+		bool existe = tabelaExiste(nodo);
+		if (existe)
+		{
+			log(nodo, "ja existe, apagando...");
+			tabelaApaga (nodo);
+		}
+
 		log(nodo, "inserindo nova rota...");
 		Tabela *t = new Tabela (nodo, vizinhos);
+		// -1 para ignorar o "."
+		for (int i = 1; i <= count; i++)
+		{
+			t->addVizinho(v[i]);
+			log (nodo, "update vizinho: " + v[i]);
+		}
+
 		tabela.push_back(*t);
 	}
-	else
-	{
-		//vector<Tabela>
-	}
 }
+
 bool Nodo::tabelaExiste(string n)
 {
 	bool result = false;
@@ -255,4 +313,51 @@ bool Nodo::tabelaExiste(string n)
 			return true;
 	}
 	return result;
+}
+
+bool Nodo::tabelaApaga(string n)
+{
+	bool result = false;
+	vector<Tabela>::iterator t;
+	for (t = tabela.begin(); t != tabela.end(); t++)
+	{
+		if ((*t).getId() == n)
+		{
+			tabela.erase(t);
+			return true;
+		}
+	}
+	return result;
+}
+
+string Nodo::getTabela (string n)
+{
+	std::ostringstream s;
+	s << "Nodo: " << getId() << endl;
+	//s << getVizinhosStr() << endl;
+	s << "\n#vizinhos: " << vizinhos.size() << endl;
+
+//	vector<Vertice>::const_iterator v;
+//	for (v = vizinhos.begin(); v != vizinhos.end(); v++)
+//	{
+//		s << "\n" << (*v).getId();
+//	}
+
+	vector<Tabela>::const_iterator t;
+	for (t = tabela.begin(); t != tabela.end(); t++)
+	{
+		s << (*t).getId() << endl;
+
+		const vector<string>* vizinhos2 = &(*t).getVizinhos();
+		vector<string>::const_iterator v2;
+		for (v2 = vizinhos2->begin();
+				v2 != vizinhos2->end(); v2++)
+		{
+			s << "  " << (*v2) << endl;
+		}
+	}
+
+	return s.str();
+
+
 }

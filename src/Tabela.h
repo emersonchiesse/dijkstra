@@ -21,6 +21,7 @@ public:
 	Tabela() {
 		id = "";
 	}
+	Tabela(string i): id(i) {};
 	Tabela(string i, vector<string> v): id(i)
 	{
 		vizinhos = v;
@@ -28,7 +29,7 @@ public:
 	virtual ~Tabela();
 
 	bool existe (string);
-	void addVizinho (string, string);
+	void addVizinho (string);
 
 	const string& getId() const {
 		return id;

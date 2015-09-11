@@ -19,6 +19,12 @@ using namespace std;
 
 //#define NUM_THREADS 4
 
+typedef enum
+{
+	THREAD_RUN=0,
+	THREAD_PAUSE
+} thread_states_t;
+
 vector<string> tokenizeString(const string& str, const string& delimiters);
 
 class Nodo {
@@ -36,13 +42,17 @@ public:
 	Nodo(string i, int x, int y);
 	virtual ~Nodo();
 
+	//thread_states_t estadoThread;
 //	static void *sendHello();
 	pthread_mutex_t *mutex_hello;
 
 	void addVizinho (Vertice v);
-	void startThreads();
+	void startSendThread();
+	void startReadThread();
 	void updateTabela(string);
 	bool tabelaExiste(string n);
+	string getTabela (string n);
+	bool tabelaApaga(string n);
 
 	const std::string& getId() const {
 		return id;

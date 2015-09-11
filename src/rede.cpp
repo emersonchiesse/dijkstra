@@ -84,6 +84,7 @@ public:
     void OnAbout(wxCommandEvent& event);
     void OnConfig(wxCommandEvent& event);
     void OnDelete(wxCommandEvent& event);
+    void OnShowRotas(wxCommandEvent& event);
 
 
     void OnPaint(wxPaintEvent& event);
@@ -113,6 +114,8 @@ enum
 	Minimal_restart = wxID_FILE2,
 	Minimal_random = wxID_FILE3,
 	Minimal_config = wxID_FILE4,
+	Minimal_rotas,
+
 	Minimal_del = wxID_DELETE,
 
     Minimal_Quit = wxID_EXIT,
@@ -230,6 +233,7 @@ BEGIN_EVENT_TABLE(MyFrame, wxFrame)
     EVT_MENU(Minimal_About, MyFrame::OnAbout)
 	EVT_MENU(Minimal_config, MyFrame::OnConfig)
 	EVT_MENU(Minimal_del, MyFrame::OnDelete)
+	EVT_MENU(Minimal_rotas, MyFrame::OnShowRotas)
 
     EVT_MOUSE_EVENTS(MyFrame::OnMouse)
 END_EVENT_TABLE()
@@ -306,6 +310,7 @@ MyFrame::MyFrame(const wxString& title)
     toolsMenu->Append(Minimal_del, _T("&Apaga nodo...\t"), _T("apaga nodo"));
 
     dijMenu->Append(Minimal_FileDikstra, _T("&Dijkstra...\tF2"), _T("Calc Dijkstra"));
+    dijMenu->Append(Minimal_rotas, _T("&Rotas...\tF4"), _T("Mostra rotas"));
 
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar();
@@ -428,6 +433,25 @@ void MyFrame::OnRandom(wxCommandEvent& event) {
 		this->Update();
 	}
 }
+
+
+void MyFrame::OnShowRotas(wxCommandEvent& event) {
+
+	if (nodosSelecionados.size()==1)
+	{
+		LinhasDialog aboutDialog ( this, -1, _("Rotas"),
+				wxDefaultPosition,
+				//wxPoint(100, 100),
+				wxSize(400, 400) );
+		aboutDialog.setText(grafo.getRotas(nodosSelecionados[0]));
+		if ( aboutDialog.ShowModal() != wxID_OK )
+			SetStatusText(_("The about box was cancelled.\n"));
+		else
+		{
+		}
+	}
+}
+
 
 
 void MyFrame::OnConfig(wxCommandEvent& event) {
