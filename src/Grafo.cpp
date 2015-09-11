@@ -352,7 +352,6 @@ string Grafo::caminhomaiscurto(string n1, string n2) {
 		out << nodos[i].getId() << " ";
 	out << "\n";
 
-
 	out << "custo para nodo " << n2 << ": " << D[ifinal] << endl;
 	// imprime D
 	out << "D: ";
@@ -536,14 +535,15 @@ string Grafo::getRotas(string nodo) {
 
 string Grafo::calculaRotas() {
 
-	std::ostringstream out1, out;
+	std::ostringstream out;
 	int size = nodos.size();
 	for (int i=0; i< size;i++)
 	{
 		for (int j = i+1; j < size ; j++)
 		{
+			std::ostringstream out1;
 			out1 << caminhomaiscurto (nodos[i].getId(), nodos[j].getId());
-			out << out1.str();
+			out << out1.str() << "----" << endl;
 			cout << out1.str();
 		}
 	}
