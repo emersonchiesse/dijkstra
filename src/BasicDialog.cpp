@@ -14,6 +14,7 @@ END_EVENT_TABLE();
 
 
 LinhasDialog::LinhasDialog ( wxWindow * parent, wxWindowID id, const wxString & title,
+		const std::string lista,
                            const wxPoint & position, const wxSize & size, long style )
 : wxDialog( parent, id, title, position, size, style)
 {
@@ -26,10 +27,10 @@ LinhasDialog::LinhasDialog ( wxWindow * parent, wxWindowID id, const wxString & 
 
 	p.x = 6; p.y = 2;
 	//s.Printf(_(" x = %d y = %d\n"), p.x, p.y);
-	dimensions.append(s);
+//	dimensions.append(s);
 	//s.Printf(_(" width = %d height = %d\n"), sz.GetWidth(), sz.GetHeight());
-	dimensions.append(s);
-	dimensions.append("");
+//	dimensions.append(s);
+	dimensions.append(lista);
 
 	dialogText = new wxTextCtrl ( this, -1, dimensions, p, sz, wxTE_MULTILINE );
 

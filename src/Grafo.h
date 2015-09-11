@@ -41,8 +41,11 @@ public:
 	const std::vector<Vertice>& getVizinhos (string id);
 
 	void criaRandom (int count, int raio);
-	void caminhomaiscurto (string n1, string n2);
+	string caminhomaiscurto (string n1, string n2);
 	string getRotas(string nodo);
+	string calculaRotas ();
+	void pause();
+
 
 	std::vector<Nodo>& getNodos() {
 		return nodos;

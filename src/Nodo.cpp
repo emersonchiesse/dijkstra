@@ -23,6 +23,8 @@ void log (string id, const string msg)
 	cout << "[nodo " << id << "] " <<  msg << endl;
 }
 
+#define SLEEP_RECEIVE 5
+#define SLEEP_SEND	10
 
 void *sendHello(void *arg) {
 	Nodo* nodo = ((Nodo*)arg);
@@ -37,13 +39,14 @@ void *sendHello(void *arg) {
 //		{
 //		case THREAD_RUN:
 //		{
-			std::ostringstream s;
+			//std::ostringstream s;
 			pthread_mutex_lock(nodo->mutex_hello);
 			vector<Vertice> *vizinhos = &nodo->getVizinhos();
 			//s << "sending hello, #vizinhos: " << vizinhos->size();
 			//log (id, s.str());
 
 			msg = nodo->getVizinhosStr();
+			//TODO send MPR
 
 			vector<Vertice>::const_iterator i;
 			for (i = vizinhos->begin(); i != vizinhos->end(); i++)
@@ -64,7 +67,7 @@ void *sendHello(void *arg) {
 			}
 			pthread_mutex_unlock(nodo->mutex_hello);
 
-			sleep(rand() % 5);
+			sleep(SLEEP_SEND);
 //		}
 //			break;
 //		case THREAD_PAUSE:
@@ -120,7 +123,7 @@ void *receiveHello(void *arg)
 			pthread_mutex_unlock(nodo->mutex_hello);
 		}
 
-		sleep(4);
+		sleep(SLEEP_RECEIVE);
 	}
 	close(myPipe);
 	unlink(namedpipe.c_str());
@@ -293,14 +296,21 @@ void Nodo::updateTabela(string msg) {
 		log(nodo, "inserindo nova rota...");
 		Tabela *t = new Tabela (nodo, vizinhos);
 		// -1 para ignorar o "."
+		// [0] eh o proprio nodo e #vizinhos
+		//
 		for (int i = 1; i <= count; i++)
 		{
+			// ignora o proprio nodo
+			if (v[i] == id)
+				continue;
 			t->addVizinho(v[i]);
 			log (nodo, "update vizinho: " + v[i]);
 		}
 
 		tabela.push_back(*t);
 	}
+
+	escolheMPR();
 }
 
 bool Nodo::tabelaExiste(string n)
@@ -358,6 +368,17 @@ string Nodo::getTabela (string n)
 	}
 
 	return s.str();
+
+
+}
+
+void Nodo::escolheMPR() {
+
+	log (id, "define MPR");
+	// avalia todos os vizinhos
+	// verifica qual vizinho tem mais vizinhos em comum
+
+	// MPR.push_back(nodo)
 
 
 }

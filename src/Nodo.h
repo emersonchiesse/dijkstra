@@ -36,6 +36,10 @@ private:
 	pthread_t threadReceiveHello;
 	vector<Tabela> tabela;
 
+	vector<string> MPR;
+
+	void escolheMPR();
+
 
 public:
 	Nodo(string i);

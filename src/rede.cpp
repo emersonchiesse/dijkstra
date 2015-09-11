@@ -85,6 +85,8 @@ public:
     void OnConfig(wxCommandEvent& event);
     void OnDelete(wxCommandEvent& event);
     void OnShowRotas(wxCommandEvent& event);
+    void OnCalcRotas(wxCommandEvent& event);
+    void OnPause(wxCommandEvent& event);
 
 
     void OnPaint(wxPaintEvent& event);
@@ -115,6 +117,8 @@ enum
 	Minimal_random = wxID_FILE3,
 	Minimal_config = wxID_FILE4,
 	Minimal_rotas,
+	Minimal_calc_rotas,
+	Minimal_pause,
 
 	Minimal_del = wxID_DELETE,
 
@@ -224,6 +228,18 @@ inline void MyFrame::OnDelete(wxCommandEvent& event) {
 
 }
 
+void MyFrame::OnCalcRotas(wxCommandEvent& event) {
+
+	string result = grafo.calculaRotas();
+	LinhasDialog c ( this, -1, _T("Rotas"), result,
+								  wxPoint(100, 100), wxSize(400, 400) );
+	c.ShowModal();
+}
+
+inline void MyFrame::OnPause(wxCommandEvent& event) {
+	grafo.pause();
+}
+
 BEGIN_EVENT_TABLE(MyFrame, wxFrame)
 	EVT_MENU(Minimal_FileOpen,  MyFrame::OnOpen)
 	EVT_MENU(Minimal_FileDikstra,  MyFrame::OnDijkstra)
@@ -234,7 +250,8 @@ BEGIN_EVENT_TABLE(MyFrame, wxFrame)
 	EVT_MENU(Minimal_config, MyFrame::OnConfig)
 	EVT_MENU(Minimal_del, MyFrame::OnDelete)
 	EVT_MENU(Minimal_rotas, MyFrame::OnShowRotas)
-
+	EVT_MENU(Minimal_calc_rotas, MyFrame::OnCalcRotas)
+	EVT_MENU(Minimal_pause, MyFrame::OnPause)
     EVT_MOUSE_EVENTS(MyFrame::OnMouse)
 END_EVENT_TABLE()
 
@@ -311,6 +328,8 @@ MyFrame::MyFrame(const wxString& title)
 
     dijMenu->Append(Minimal_FileDikstra, _T("&Dijkstra...\tF2"), _T("Calc Dijkstra"));
     dijMenu->Append(Minimal_rotas, _T("&Rotas...\tF4"), _T("Mostra rotas"));
+    dijMenu->Append(Minimal_calc_rotas, _T("&Calcula Rotas...\tF5"), _T("calcula rotas"));
+    dijMenu->Append(Minimal_pause, _T("&pause...\tF6"), _T("pausa threads"));
 
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar();
@@ -380,25 +399,21 @@ void MyFrame::OnDijkstra(wxCommandEvent& event) {
 	{
 		cout << "\niniciando dijkstra:" << endl;
 
-		grafo.caminhomaiscurto(nodosSelecionados[0],
+		string result = grafo.caminhomaiscurto(nodosSelecionados[0],
 				nodosSelecionados[1]);
 
 		cout << "\ndijkstra done." << endl;
-
-//		wxMessageBox(wxString::Format(
-//		                    _T("Welcome to %s!\n")
-//		                    _T("\n")
-//		                    _T("\n")
-//		                    _T("running under %s."),
-//		                    wxVERSION_STRING,
-//		                    wxGetOsDescription().c_str()
-//		                 ),
-//		                 _T("About Redes Sem Fio App"),
-//		                 wxOK | wxICON_INFORMATION,
-//		                 this);
+		LinhasDialog c ( this, -1, _T("Dijkstra"), result,
+	    	                          wxPoint(100, 100), wxSize(400, 400) );
+		c.ShowModal();
 	}
 	else
-		SetStatusText("selecione 2 nodos");
+	    wxMessageBox(wxString::Format(
+	                    _T("Não foram escolhidos dois nós!")
+	                 ),
+	                 _T("Warning"),
+	                 wxOK | wxICON_INFORMATION,
+	                 this);
 }
 
 
@@ -414,7 +429,7 @@ void MyFrame::OnRestart(wxCommandEvent& event) {
 
 void MyFrame::OnRandom(wxCommandEvent& event) {
 
-    LinhasDialog aboutDialog ( this, -1, _("Digite numero de nós"),
+    LinhasDialog aboutDialog ( this, -1, _("Digite numero de nós"), "6",
     	                          wxPoint(100, 100), wxSize(200, 200) );
 	if ( aboutDialog.ShowModal() != wxID_OK )
 		SetStatusText(_("The about box was cancelled.\n"));
@@ -439,7 +454,7 @@ void MyFrame::OnShowRotas(wxCommandEvent& event) {
 
 	if (nodosSelecionados.size()==1)
 	{
-		LinhasDialog aboutDialog ( this, -1, _("Rotas"),
+		LinhasDialog aboutDialog ( this, -1, _T("Rotas"), "",
 				wxDefaultPosition,
 				//wxPoint(100, 100),
 				wxSize(400, 400) );
@@ -455,7 +470,7 @@ void MyFrame::OnShowRotas(wxCommandEvent& event) {
 
 
 void MyFrame::OnConfig(wxCommandEvent& event) {
-    ConfigDialog c ( this, -1, _("Digite numero de nós"),
+    ConfigDialog c ( this, -1, _T("Digite numero de nós"),
     	                          wxPoint(100, 100), wxSize(300, 300) );
 	if ( c.ShowModal() != wxID_OK )
 		SetStatusText(_("The about box was cancelled.\n"));

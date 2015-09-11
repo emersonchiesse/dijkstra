@@ -17,6 +17,7 @@ class LinhasDialog: public wxDialog
 public:
 
 	LinhasDialog ( wxWindow * parent, wxWindowID id, const wxString & title,
+			const std::string lista,
 	              const wxPoint & pos = wxDefaultPosition,
 	              const wxSize & size = wxDefaultSize,
 	              long style = wxDEFAULT_DIALOG_STYLE );

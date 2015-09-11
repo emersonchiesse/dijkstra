@@ -14,10 +14,13 @@
 #include <algorithm>
 #include <cmath>
 #include <stdio.h>
+#include <sstream>
 
 using namespace std;
 
 Grafo::Grafo() {
+	init();
+	cout << nodos.size() << endl;
 }
 
 Grafo::~Grafo() {
@@ -220,7 +223,7 @@ void Grafo::init() {
 	}
 }
 
-void Grafo::caminhomaiscurto(string n1, string n2) {
+string Grafo::caminhomaiscurto(string n1, string n2) {
 	vector<string> N; // conjunto dos nodos com custo conhecido
 	vector<string> P; // nodo anterior (p(v))
 	vector<int> D;  // distancias calculadas
@@ -230,23 +233,22 @@ void Grafo::caminhomaiscurto(string n1, string n2) {
 	string u = nodos[iu].getId();
 
 	int ifinal = procura(n2);
-	cout << "nodo inicial: " << u << ", nodo final: " << n2 << endl;
+
+	std::ostringstream out;
+	out << "nodo inicial: " << u << ", nodo final: " << n2 << endl;
 
 	// N = {u}
 	N.push_back(u);
-	//D.push_back(0);
 
 	// inicializacao do vetor D; custos infinitos
-	//for (int i = iu+1; i < ifinal; i++)
 	for (int i = 0; i < nodos.size(); i++)
 	{
-		cout << "nodo[i]: " << nodos[i].getId() << " ";
-		//D.push_back(nodos[iu].getCustoVizinho(nodos[i].getId()));
+		//out << "nodo[i]: " << nodos[i].getId() << " ";
 		D.push_back(getCusto(u, nodos[i].getId()));
 		P.push_back(u);
-		cout << "custo: " << D[i] << "\n";
+//		out << "custo: " << D[i] << "\n";
 	}
-	cout << endl;
+//	out << endl;
 
 	string w;
 	int ind = iu;
@@ -259,20 +261,18 @@ void Grafo::caminhomaiscurto(string n1, string n2) {
 		for (int v = 0; v < D.size() ; v++)
 		{
 			// verifica se v nodo nao esta em N
-//			string id = nodos[iu+v].getId();
 			string id = nodos[v].getId();
-			cout << id << " está em N?"<< endl;
+//			out << id << " está em N?"<< endl;
 			if (find (N.begin(), N.end(), id ) == N.end())
 			{
-				cout << id << " nao está em N"<< endl;
+//				out << id << " nao está em N"<< endl;
 
 				// se nao esta, procura menor D(w)
 				if (D[v] < Dw)
 				{
 					Dw = D[v];
-					cout << "w: " << id <<
-							" D(w): " << Dw << "\n";
-					//ind = iu+v;
+//					out << "w: " << id <<
+//							" D(w): " << Dw << "\n";
 					ind = v;
 				}
 			}
@@ -285,23 +285,23 @@ void Grafo::caminhomaiscurto(string n1, string n2) {
 
 		// acrescenta w a N
 		w = nodos[ind].getId();
-		cout << "acrescenta nodo " << w << " a N\n";
+		//out << "acrescenta nodo " << w << " a N\n";
 		N.push_back(w);
 
 		// imprime N
- 		cout << "N'= ";
-		for (int i = 0; i < N.size(); i++)
-			cout << N[i] ;
-		cout << "\n";
+// 		out << "N'= ";
+//		for (int i = 0; i < N.size(); i++)
+//			cout << N[i] ;
+//		out << "\n";
 
 		// atualiza D(v) para todo v adjacente a w e nao em N
 		int wi = procura(w);
 		vector<Vertice> vizinhosW = nodos[wi].getVizinhos();
 		int nvizinhos = vizinhosW.size();
-		cout << "vizinhos de " << w << ": " << nvizinhos << "\n";
-		for (int i = 0; i < nvizinhos; i++)
-			cout << vizinhosW[i].getId() << " ";
-		cout << "\n";
+//		out << "vizinhos de " << w << ": " << nvizinhos << "\n";
+//		for (int i = 0; i < nvizinhos; i++)
+//			out << vizinhosW[i].getId() << " ";
+//		out << "\n";
 
 		for (int i = 0; i < nvizinhos ; i++)
 		{
@@ -314,30 +314,24 @@ void Grafo::caminhomaiscurto(string n1, string n2) {
 			if (find (N.begin(), N.end(), v ) == N.end())
 			{
 				// atualiza D(v) se v adjacente a w e nao em N'
-				//D[indv-iu] = min (D[indv-iu], Dw + vizinhosW[i].getCusto()) ;
-				//D[indv] = min (D[indv], Dw + getCusto(w, id)) ;
-
 				if (D[indv] > Dw + getCusto(w, id))
 				{
 					D[indv] = Dw + getCusto(w, id);
 					P[indv]=w;
 				}
 
-				cout << "D(v)(" << v << ")= " << D[indv] << "\n";
-
+//				out << "D(v)(" << v << ")= " << D[indv] << "\n";
 			}
 		}
 
-		cout << "D: ";
-		//for (int i = 0; i < nnodos; i++)
-		for (int i = 0; i < D.size(); i++)
-			cout << D[i] << " ";
-		cout << "\n";
+//		out << "D: ";
+//		for (int i = 0; i < D.size(); i++)
+//			out << D[i] << " ";
+//		out << "\n";
 
 		// verifica se todos os nodos estao em N
 		stop = true;
 		for (int j = 0; j < nnodos; j++)
-		//for (int j = iu; j < ifinal; j++)
 		{
 			string id = nodos[j].getId();
 			if (find (N.begin(), N.end(), id ) == N.end())
@@ -350,28 +344,28 @@ void Grafo::caminhomaiscurto(string n1, string n2) {
 	}
 	while (!stop);
 
-	cout << "\nTabela de custos do nodo " << n1 << ": " << endl;
+	out << "\nTabela de custos do nodo " << n1 << ": " << endl;
 
 	// imprime N
-	cout << "N: ";
+	out << "N: ";
 	for (int i = iu; i < ifinal; i++)
-		cout << nodos[i].getId() << " ";
-	cout << "\n";
+		out << nodos[i].getId() << " ";
+	out << "\n";
 
 
-	cout << "custo para nodo " << n2 << ": " << D[ifinal] << endl;
+	out << "custo para nodo " << n2 << ": " << D[ifinal] << endl;
 	// imprime D
-	cout << "D: ";
+	out << "D: ";
 	for (int i = 0; i < D.size(); i++)
-		cout << D[i] << " ";
-	cout << "\n";
+		out << D[i] << " ";
+	out << "\n";
 
-	cout << "P: ";
+	out << "P: ";
 	for (int i = 0; i < P.size(); i++)
-		cout << P[i] << " ";
-	cout << "\n";
+		out << P[i] << " ";
+	out << "\n";
 
-	cout << "caminho de " << n1 << " para " << n2 << ":" << endl;
+	out << "caminho de " << n1 << " para " << n2 << ":" << endl;
 
 	bool sai = false;
 	vector<string> path;
@@ -390,9 +384,11 @@ void Grafo::caminhomaiscurto(string n1, string n2) {
 	}
 	path.push_back(n1);
 	for (int i = path.size()-1; i >= 0; i--)
-		cout << path[i] << " ";
-	cout << endl;
+		out << path[i] << " ";
+	out << endl;
 
+
+	return out.str();
 }
 
 void *threadrun(void *threadid)
@@ -536,4 +532,26 @@ string Grafo::getRotas(string nodo) {
 	}
 
 	return "";
+}
+
+string Grafo::calculaRotas() {
+
+	std::ostringstream out1, out;
+	int size = nodos.size();
+	for (int i=0; i< size;i++)
+	{
+		for (int j = i+1; j < size ; j++)
+		{
+			out1 << caminhomaiscurto (nodos[i].getId(), nodos[j].getId());
+			out << out1.str();
+			cout << out1.str();
+		}
+	}
+
+	cout << out.str();
+
+	return out.str();
+}
+
+void Grafo::pause() {
 }
