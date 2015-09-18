@@ -36,7 +36,7 @@ public:
 	int procura(string id);
 	int procura(int x, int y);
 	void addNodo(Nodo *n);
-	void delNodo(string id);
+	bool delNodo(string id);
 	int getCusto (string a, string b);
 	const std::vector<Vertice>& getVizinhos (string id);
 

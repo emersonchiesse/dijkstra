@@ -17,15 +17,13 @@
 
 using namespace std;
 
-//#define NUM_THREADS 4
-
-typedef enum
-{
-	THREAD_RUN=0,
-	THREAD_PAUSE
-} thread_states_t;
-
 vector<string> tokenizeString(const string& str, const string& delimiters);
+
+typedef enum {
+	THREAD_RUNNING,
+	THREAD_STOP,
+	THREAD_PAUSE
+} threadState;
 
 class Nodo {
 private:
@@ -35,26 +33,33 @@ private:
 	pthread_t threadSendHello;
 	pthread_t threadReceiveHello;
 	vector<Tabela> tabela;
-
+	threadState sendThreadState;
+	threadState receiveThreadState;
 	vector<string> MPR;
-
+	int versaoHello;
 	void escolheMPR();
 
-
 public:
+	Nodo ();
 	Nodo(string i);
 	Nodo(string i, int x, int y);
 	virtual ~Nodo();
 
 	//thread_states_t estadoThread;
 //	static void *sendHello();
-	pthread_mutex_t *mutex_hello;
+	pthread_mutex_t mutex_hello;
 
 	void addVizinho (Vertice v);
+	bool isMPR();
+
 	void startSendThread();
 	void startReadThread();
+	void threadPause();
+	void threadRun();
+	void threadStop();
+
 	void updateTabela(string);
-	bool tabelaExiste(string n);
+	int tabelaExiste(string n); // retorna versao da tabela
 	string getTabela (string n);
 	bool tabelaApaga(string n);
 
@@ -97,6 +102,21 @@ public:
 
 	void sendHELLO();
 
+	threadState getReceiveThreadState() const {
+		return receiveThreadState;
+	}
+
+	void setReceiveThreadState(threadState receiveThreadState) {
+		this->receiveThreadState = receiveThreadState;
+	}
+
+	threadState getSendThreadState() const {
+		return sendThreadState;
+	}
+
+	void setSendThreadState(threadState sendThreadState) {
+		this->sendThreadState = sendThreadState;
+	}
 };
 
 #endif /* NODO_H_ */

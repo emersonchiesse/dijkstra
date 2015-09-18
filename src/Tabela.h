@@ -16,13 +16,18 @@ using namespace std;
 class Tabela {
 private:
 	string id;
+	int versao;
 	vector<string> vizinhos;
+
 public:
 	Tabela() {
 		id = "";
+		versao = 0;
 	}
-	Tabela(string i): id(i) {};
-	Tabela(string i, vector<string> v): id(i)
+
+	Tabela(string i): id(i), versao(0) {};
+	Tabela(string i, int ver, vector<string> v):
+		id(i), versao(ver)
 	{
 		vizinhos = v;
 	};
@@ -45,6 +50,14 @@ public:
 
 	void setVizinhos(const vector<string>& vizinhos) {
 		this->vizinhos = vizinhos;
+	}
+
+	int getVersao() const {
+		return versao;
+	}
+
+	void setVersao(int versao) {
+		this->versao = versao;
 	}
 };
 

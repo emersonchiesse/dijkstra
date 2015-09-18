@@ -31,16 +31,16 @@ void *sendHello(void *arg) {
 	string id = nodo->getId();
 	string namedpipe = "/tmp/pipe" + id;
 	string msg;
-//	nodo->estadoThread = THREAD_RUN;
-	bool sai = false;
-	while (!sai)
+	threadState s = THREAD_RUNNING;
+//	while (nodo->getSendThreadState() != THREAD_STOP)
+	while (true)
 	{
-//		switch (nodo->estadoThread)
-//		{
-//		case THREAD_RUN:
-//		{
+		switch (s) //(nodo->getSendThreadState())
+		{
+		case THREAD_RUNNING:
+		{
 			//std::ostringstream s;
-			pthread_mutex_lock(nodo->mutex_hello);
+			pthread_mutex_lock(&nodo->mutex_hello);
 			vector<Vertice> *vizinhos = &nodo->getVizinhos();
 			//s << "sending hello, #vizinhos: " << vizinhos->size();
 			//log (id, s.str());
@@ -65,17 +65,17 @@ void *sendHello(void *arg) {
 				else
 					log (id, "open pipe failed");
 			}
-			pthread_mutex_unlock(nodo->mutex_hello);
+			pthread_mutex_unlock(&nodo->mutex_hello);
 
 			sleep(SLEEP_SEND);
-//		}
-//			break;
-//		case THREAD_PAUSE:
-//			sleep (1);
-//			break;
-//		default:
-//			break;
-//		}
+		}
+			break;
+		case THREAD_PAUSE:
+			sleep (1);
+			break;
+		default:
+			break;
+		}
 	}
 	return 0;
 }
@@ -118,9 +118,9 @@ void *receiveHello(void *arg)
 			int length = read(myPipe, buffer, 500);
 			buffer[length] = '\0';
 			log (id, "received: " +  string(buffer));
-			pthread_mutex_lock(nodo->mutex_hello);
+			pthread_mutex_lock(&nodo->mutex_hello);
 			nodo->updateTabela(string(buffer));
-			pthread_mutex_unlock(nodo->mutex_hello);
+			pthread_mutex_unlock(&nodo->mutex_hello);
 		}
 
 		sleep(SLEEP_RECEIVE);
@@ -132,18 +132,37 @@ void *receiveHello(void *arg)
 }
 }
 
-Nodo::Nodo(string i) {
-	id =i;
+Nodo::Nodo() {
 	x=0;
 	y=0;
-//	estadoThread = THREAD_RUN;
+	threadSendHello=NULL;
+	threadReceiveHello=NULL;
+	receiveThreadState = THREAD_RUNNING;
+	sendThreadState = THREAD_RUNNING;
+	versaoHello = 0;
+	pthread_mutex_init(&mutex_hello, NULL);
+}
+
+Nodo::Nodo(string i) {
+	x=0;
+	y=0;
+	id =i;
+//	Nodo();
+	threadSendHello=NULL;
+	threadReceiveHello=NULL;
+	receiveThreadState = THREAD_RUNNING;
+	sendThreadState = THREAD_RUNNING;
+	pthread_mutex_init(&mutex_hello, NULL);
+	versaoHello = 0;
 }
 
 Nodo::Nodo(string i, int x, int y) {
+//	Nodo();
 	id=i;
 	this->x=x;
 	this->y=y;
-//	estadoThread = THREAD_RUN;
+	versaoHello = 0;
+	pthread_mutex_init(&mutex_hello, NULL);
 }
 
 Nodo::~Nodo() {
@@ -219,6 +238,8 @@ void Nodo::startSendThread() {
 }
 
 string Nodo::getVizinhosStr() {
+
+	// formato do hello: id'v'n | v1 | v2 | ... | vn,versao
 	std::ostringstream s;
 	s << getId() << "v" << vizinhos.size();
 	vector<Vertice>::const_iterator v;
@@ -226,7 +247,7 @@ string Nodo::getVizinhosStr() {
 	{
 		s << "|" << (*v).getId();
 	}
-	s << ".";
+	s << ',' << versaoHello << ".";
 
 	return s.str();
 }
@@ -243,7 +264,9 @@ void Nodo::updateTabela(string msg) {
 	string nodo = "";
 	vector<string> vizinhos;
 
-	// msg: nv#|n1|...|nz.
+	// formato msg: nv#|n1|...|nz,versao.
+
+
 	// se nao tem . nem 'v', eh mensagem mal formada
 	if ((msg.find('v')==string::npos) ||
 		(msg.find('.')==string::npos)
@@ -254,17 +277,35 @@ void Nodo::updateTabela(string msg) {
 			return;
 		}
 
-	// extrai nodo
+	// extrai todas as mensagens (pode chegar mais de uma mensagem hello)
 	vector<string> m = tokenizeString (msg, ".");
 	vector<string>::iterator i;
 	for (i = m.begin(); i!= m.end(); i++)
 	{
+		// separa nodo
 		vector<string> v1 = tokenizeString ((*i), "v");
 		nodo = v1[0];
 
+		// vizinhos
 		log(nodo, "vizinhos: " + v1[1]);
-		vector<string> v = tokenizeString (v1[1], "|");
+
+		// retira versao
+		int versaomsg = 0;
+		vector<string> w = tokenizeString (v1[1], ",");
+		versaomsg = std::atoi (w[1].c_str());
+		log(nodo, "versao hello: " + w[1]);
+
+		vector<string> v = tokenizeString (w[0], "|");
+
+		// v[0] = qtde de vizinhos
 		int count = std::atoi (v[0].c_str());
+
+		// se nao tem '|', msg truncada
+		if (v.size() <= count)
+		{
+			log(id, "mensagem truncada");
+			return;
+		}
 
 		//v = tokenizeString (msg, "|");
 		if (v.size() == 0)
@@ -273,31 +314,40 @@ void Nodo::updateTabela(string msg) {
 			return;
 		}
 
-		if (v.size() == 1)
-		{
-			log(id, "sem vizinhos (msg: " + v[1] + ")");
-			return;
-		}
 
-		if (v.size() <= count)
-		{
-			log(id, "mensagem truncada");
-			return;
-		}
 
 		// extrai vizinhos
-		bool existe = tabelaExiste(nodo);
-		if (existe)
+		int versao = tabelaExiste(nodo);
+		std::ostringstream s;
+		s << "versao existente: " << versao;
+		log(id, s.str());
+		if (versao == versaomsg)
+		{
+			log(id, "versao de tabela igual. sem atualizacao");
+			return;
+		}
+
+		// atualiza tabela
+
+		if (versao >= 0)
 		{
 			log(nodo, "ja existe, apagando...");
 			tabelaApaga (nodo);
 		}
 
+		// TODO: pode ter ficado sem. tem q apagar se tiver vizinhos
+		if (v.size() == 1)
+		{
+			log(id, "sem vizinhos (msg: " + v[1] + ")");
+			//return;
+		}
+
 		log(nodo, "inserindo nova rota...");
-		Tabela *t = new Tabela (nodo, vizinhos);
+		Tabela *t = new Tabela (nodo, versaomsg, vizinhos);
 		// -1 para ignorar o "."
 		// [0] eh o proprio nodo e #vizinhos
 		//
+		//t->setVersao(0);
 		for (int i = 1; i <= count; i++)
 		{
 			// ignora o proprio nodo
@@ -306,23 +356,23 @@ void Nodo::updateTabela(string msg) {
 			t->addVizinho(v[i]);
 			log (nodo, "update vizinho: " + v[i]);
 		}
-
 		tabela.push_back(*t);
 	}
 
 	escolheMPR();
 }
 
-bool Nodo::tabelaExiste(string n)
+int Nodo::tabelaExiste(string n)
 {
-	bool result = false;
 	vector<Tabela>::const_iterator t;
 	for (t = tabela.begin(); t != tabela.end(); t++)
 	{
 		if ((*t).getId() == n)
-			return true;
+		{
+			return (*t).getVersao();
+		}
 	}
-	return result;
+	return -1;
 }
 
 bool Nodo::tabelaApaga(string n)
@@ -378,7 +428,54 @@ void Nodo::escolheMPR() {
 	// avalia todos os vizinhos
 	// verifica qual vizinho tem mais vizinhos em comum
 
-	// MPR.push_back(nodo)
+	int max = 0;
+	int i = 0;
+	string mpr;
 
+	vector<Tabela>::const_iterator t;
+	for (t = tabela.begin(); t != tabela.end(); t++)
+	{
+		const vector<string>* vizinhos2 = &(*t).getVizinhos();
+		vector<string>::const_iterator v2;
+		int nvizinhos = vizinhos2->size();
+		if (nvizinhos == 0)
+		{
+			MPR.push_back((*t).getId());
+			log (id, "novo MPR: " + (*t).getId());
+		}
+//		else
+//		{
+//			if (nvizinhos > max)
+//			{
+//				max = nvizinhos;
+//				mpr = (*t).getId();
+//			}
+//		}
+		i++;
+	}
+//	if (max > 0)
+//	{
+//		MPR.push_back(mpr);
+//		log (id, "novo MPR: " + mpr);
+//	}
 
+}
+
+void Nodo::threadPause() {
+	sendThreadState = THREAD_PAUSE;
+	receiveThreadState = THREAD_PAUSE;
+}
+
+void Nodo::threadRun() {
+	sendThreadState = THREAD_RUNNING;
+	receiveThreadState = THREAD_RUNNING;
+}
+
+void Nodo::threadStop() {
+	sendThreadState = THREAD_STOP;
+	receiveThreadState = THREAD_STOP;
+}
+
+bool Nodo::isMPR() {
+	return MPR.size() > 0;
 }

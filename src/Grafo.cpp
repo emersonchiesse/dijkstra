@@ -425,7 +425,7 @@ void Grafo::criaRandom(int count, int r) {
 
 		// ajusta coordenadas de tela, desloca para cima e direita
 		Nodo *n = new Nodo(s, x+2*raio, y+2*raio);
-		n->mutex_hello = m;
+		//n->mutex_hello = m;
 		this->addNodo(n);
 
 //		int rc = pthread_create(&threads[i], NULL,
@@ -483,14 +483,16 @@ void Grafo::criaRandom(int count, int r) {
 
 }
 
-void Grafo::delNodo(string id) {
+bool Grafo::delNodo(string id) {
 
-//	vector <Nodo>::iterator i = nodos.begin ();
-//					i = std::find(nodos.begin(),
-//							nodos.end(),
-//							id.c_str());
-//	if (i != nodos.end() )
-//		nodos.erase(i);
+	int ind = procura(id);
+	if (ind >=0)
+	{
+		nodos.erase(nodos.begin()+ind);
+		return true;
+	}
+	else
+		return false;
 }
 
 // retorna custo de vertice, independente de direcao
@@ -520,7 +522,7 @@ const std::vector<Vertice>& Grafo::getVizinhos(string id) {
 		return nodos[ind].getVizinhos();
 	}
 
-	//return NULL;
+//	return NULL;
 }
 
 string Grafo::getRotas(string nodo) {
@@ -554,4 +556,7 @@ string Grafo::calculaRotas() {
 }
 
 void Grafo::pause() {
+
+
+
 }

@@ -66,7 +66,10 @@ public:
     virtual bool OnInit();
 };
 
-
+enum
+{
+    TIMER_ID= 10
+};
 
 // Define a new frame type: this is going to be our main frame
 class MyFrame : public wxFrame
@@ -87,6 +90,7 @@ public:
     void OnShowRotas(wxCommandEvent& event);
     void OnCalcRotas(wxCommandEvent& event);
     void OnPause(wxCommandEvent& event);
+    void OnTimerTimeout(wxTimerEvent& event);
 
 
     void OnPaint(wxPaintEvent& event);
@@ -100,6 +104,7 @@ private:
 	Grafo grafo;
     std::vector<string> nodosSelecionados;
     setup::Config config;
+    wxTimer* m_pTimer;
 };
 
 // ----------------------------------------------------------------------------
@@ -147,12 +152,14 @@ void MyFrame::OnPaint(wxPaintEvent& event) {
     std::vector<Nodo> *nodos = &grafo.getNodos();
 
     // desenha nodos
+    Nodo *n;
     vector<Nodo>::iterator i;
     for (i=nodos->begin(); i< nodos->end(); i++)
     {
-    	int x = (*i).getX();
-    	int y = (*i).getY();
-    	string id = (*i).getId();
+    	n = (Nodo*)&(*i);
+    	int x = n->getX();
+    	int y = n->getY();
+    	string id = n->getId();
 
     	// escolhe cor, se estiver selecionado
     	if (std::find(nodosSelecionados.begin(),
@@ -169,11 +176,21 @@ void MyFrame::OnPaint(wxPaintEvent& event) {
 		}
 
     	// desenha nodos
+    	// se eh MPR, desenha com outra cor
+    	if (n->isMPR())
+    	{
+			dc.SetPen( wxPen( wxColor(255,0,0), 2 ) );
+    	}
+    	else
+    	{
+    		dc.SetPen( wxPen( wxColor(0,0,255), 1 ) );
+    	}
     	dc.DrawCircle(x*MULTIPLIER, size.y-y*MULTIPLIER, config.getRaioNodo());
     	dc.DrawText(wxString::FromUTF8(id.c_str()),
     			x*MULTIPLIER+5, size.y-y*MULTIPLIER+5);
 
     	// desenha vertices
+    	dc.SetPen( wxPen( wxColor(0,0,0), 1 ) );
 //    	std::vector<Vertice> vizinhos = nodos[i]->getVizinhos();
 //    	for (int j=0; j<vizinhos.size(); j++)
     	vector<Vertice> *vizinhos = &(*i).getVizinhos();
@@ -185,9 +202,9 @@ void MyFrame::OnPaint(wxPaintEvent& event) {
     		string s=(*v). getId();
     		int peso=(*v).getCusto();
     		int ind = grafo.procura(s);
-    		Nodo n = nodos->data()[ind];
-    		int x1 = n.getX();
-    		int y1 = n.getY();
+    		Nodo *n = &nodos->data()[ind];
+    		int x1 = n->getX();
+    		int y1 = n->getY();
     		dc.DrawLine(x*MULTIPLIER, size.y-y*MULTIPLIER,
     				x1*MULTIPLIER, size.y-y1*MULTIPLIER);
 
@@ -199,6 +216,7 @@ void MyFrame::OnPaint(wxPaintEvent& event) {
 						size.y-((y+y1)/2)*MULTIPLIER);
     		}
     	}
+
     }
 }
 
@@ -222,8 +240,15 @@ inline void MyFrame::OnDelete(wxCommandEvent& event) {
 
 	for (i = nodosSelecionados.begin (); i != nodosSelecionados.end();)
 	{
-//		if (grafo.delNodo(*i))
-//			nodosSelecionados.erase(i);
+		if (grafo.delNodo((*i)))
+		{
+			vector <string>::iterator i = nodosSelecionados.begin ();
+				i = std::find(nodosSelecionados.begin(),
+						nodosSelecionados.end(),
+						(*i));
+				if (i != nodosSelecionados.end() )
+					nodosSelecionados.erase(i);
+		}
 	}
 
 }
@@ -232,7 +257,7 @@ void MyFrame::OnCalcRotas(wxCommandEvent& event) {
 
 	string result = grafo.calculaRotas();
 	LinhasDialog c ( this, -1, _T("Rotas"), result,
-								  wxPoint(100, 100), wxSize(400, 400) );
+			wxPoint(100, 100), wxSize(400, 400) );
 	c.ShowModal();
 }
 
@@ -253,6 +278,7 @@ BEGIN_EVENT_TABLE(MyFrame, wxFrame)
 	EVT_MENU(Minimal_calc_rotas, MyFrame::OnCalcRotas)
 	EVT_MENU(Minimal_pause, MyFrame::OnPause)
     EVT_MOUSE_EVENTS(MyFrame::OnMouse)
+	EVT_TIMER(TIMER_ID,MyFrame::OnTimerTimeout)
 END_EVENT_TABLE()
 
 // Create a new application object: this macro will allow wxWidgets to create
@@ -320,16 +346,16 @@ MyFrame::MyFrame(const wxString& title)
     fileMenu->Append(Minimal_FileOpen, _T("&Open...\tF1"), _T("Open file"));
     fileMenu->Append(Minimal_Quit, _T("E&xit\tAlt-X"), _T("Quit this program"));
 
-    toolsMenu->Append(Minimal_restart, _T("&Restart\tAlt-R"), _T(""));
-    toolsMenu->Append(Minimal_random, _T("R&andom\tAlt-A"), _T(""));
-    toolsMenu->Append(Minimal_FileDikstra, _T("&Dijkstra...\tF2"), _T("Calc Dijkstra"));
-    toolsMenu->Append(Minimal_config, _T("&Configurações...\tF3"), _T("Configurações"));
-    toolsMenu->Append(Minimal_del, _T("&Apaga nodo...\t"), _T("apaga nodo"));
+    toolsMenu->Append(Minimal_restart, _T("&Restart\tAlt+R"), _T(""));
+    toolsMenu->Append(Minimal_random, _T("R&andom\tAlt+A"), _T(""));
+    toolsMenu->Append(Minimal_FileDikstra, _T("&Dijkstra...\tF4"), _T("Calc Dijkstra"));
+    toolsMenu->Append(Minimal_config, _T("&Configurações...\tAlt+C"), _T("Configurações"));
+    toolsMenu->Append(Minimal_del, _T("&Apaga nodo...\tDel"), _T("apaga nodo"));
+    toolsMenu->Append(Minimal_pause, _T("&pause...\tAlt+P"), _T("pausa threads"));
 
     dijMenu->Append(Minimal_FileDikstra, _T("&Dijkstra...\tF2"), _T("Calc Dijkstra"));
-    dijMenu->Append(Minimal_rotas, _T("&Rotas...\tF4"), _T("Mostra rotas"));
-    dijMenu->Append(Minimal_calc_rotas, _T("&Calcula Rotas...\tF5"), _T("calcula rotas"));
-    dijMenu->Append(Minimal_pause, _T("&pause...\tF6"), _T("pausa threads"));
+    dijMenu->Append(Minimal_rotas, _T("&Rotas...\tF12"), _T("Mostra rotas"));
+    dijMenu->Append(Minimal_calc_rotas, _T("&Calcula Rotas...\tF11"), _T("calcula rotas"));
 
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar();
@@ -348,8 +374,9 @@ MyFrame::MyFrame(const wxString& title)
     //SetStatusText(_T("Welcome to wxWidgets!"));
 #endif // wxUSE_STATUSBAR
 
-    //Board *board = new Board(this);
-    //board->SetFocus();
+
+    m_pTimer = new wxTimer(this,TIMER_ID);
+    m_pTimer->Start(1000);
  }
 
 
@@ -429,7 +456,7 @@ void MyFrame::OnRestart(wxCommandEvent& event) {
 
 void MyFrame::OnRandom(wxCommandEvent& event) {
 
-    LinhasDialog aboutDialog ( this, -1, _("Digite numero de nós"), "6",
+    LinhasDialog aboutDialog ( this, -1, _T("Digite numero de nós"), "6",
     	                          wxPoint(100, 100), wxSize(200, 200) );
 	if ( aboutDialog.ShowModal() != wxID_OK )
 		SetStatusText(_("The about box was cancelled.\n"));
@@ -541,3 +568,11 @@ void MyFrame::OnMouse(wxMouseEvent& event) {
 
 
 }
+
+void MyFrame::OnTimerTimeout(wxTimerEvent& event)
+{
+	this->Refresh(true);
+	this->Update();
+}
+
+
