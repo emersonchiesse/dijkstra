@@ -461,8 +461,10 @@ void Grafo::criaRandom(int count, int r) {
 			if (ind >=0)
 				continue;
 
-			int custo = 1;
 			// custo fixo 1
+			//int custo = 1;
+			int custo = rand() %10;
+
 			Vertice v (s, custo);
 			nodos[i].addVizinho(v);
 
@@ -475,11 +477,15 @@ void Grafo::criaRandom(int count, int r) {
 		}
 	}
 
+	// read tem q ser antes de send pois send cria o pipe
 	for (int i = 0; i < count; i++)
 		nodos[i].startReadThread();
 
 	for (int i = 0; i < count; i++)
 		nodos[i].startSendThread();
+
+	for (int i = 0; i < count; i++)
+		nodos[i].startCheckThread();
 
 }
 
@@ -536,7 +542,8 @@ string Grafo::getRotas(string nodo) {
 }
 
 string Grafo::calculaRotas() {
-
+	ofstream myfile;
+	  myfile.open ("/tmp/calc.txt");
 	std::ostringstream out;
 	int size = nodos.size();
 	for (int i=0; i< size;i++)
@@ -551,7 +558,8 @@ string Grafo::calculaRotas() {
 	}
 
 	cout << out.str();
-
+	myfile << out.str();
+	 myfile.close();
 	return out.str();
 }
 

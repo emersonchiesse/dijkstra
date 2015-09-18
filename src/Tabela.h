@@ -18,16 +18,18 @@ private:
 	string id;
 	int versao;
 	vector<string> vizinhos;
+	bool alive;
 
 public:
 	Tabela() {
 		id = "";
 		versao = 0;
+		alive = true;
 	}
 
-	Tabela(string i): id(i), versao(0) {};
+	Tabela(string i): id(i), versao(0), alive(true) {};
 	Tabela(string i, int ver, vector<string> v):
-		id(i), versao(ver)
+		id(i), versao(ver), alive(true)
 	{
 		vizinhos = v;
 	};
@@ -58,6 +60,14 @@ public:
 
 	void setVersao(int versao) {
 		this->versao = versao;
+	}
+
+	bool isAlive() const {
+		return alive;
+	}
+
+	void setAlive(bool alive) {
+		this->alive = alive;
 	}
 };
 

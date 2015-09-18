@@ -32,6 +32,7 @@ private:
 	int x, y;
 	pthread_t threadSendHello;
 	pthread_t threadReceiveHello;
+	pthread_t threadCheck;
 	vector<Tabela> tabela;
 	threadState sendThreadState;
 	threadState receiveThreadState;
@@ -54,6 +55,7 @@ public:
 
 	void startSendThread();
 	void startReadThread();
+	void startCheckThread();
 	void threadPause();
 	void threadRun();
 	void threadStop();
@@ -63,6 +65,8 @@ public:
 	string getTabela (string n);
 	bool tabelaApaga(string n);
 
+	void killAll();
+	void checkAlives();
 	const std::string& getId() const {
 		return id;
 	}

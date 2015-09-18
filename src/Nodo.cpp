@@ -23,8 +23,9 @@ void log (string id, const string msg)
 	cout << "[nodo " << id << "] " <<  msg << endl;
 }
 
-#define SLEEP_RECEIVE 5
-#define SLEEP_SEND	10
+#define SLEEP_RECEIVE 3
+#define SLEEP_SEND	7
+#define SLEEP_CHECK 20
 
 void *sendHello(void *arg) {
 	Nodo* nodo = ((Nodo*)arg);
@@ -46,7 +47,6 @@ void *sendHello(void *arg) {
 			//log (id, s.str());
 
 			msg = nodo->getVizinhosStr();
-			//TODO send MPR
 
 			vector<Vertice>::const_iterator i;
 			for (i = vizinhos->begin(); i != vizinhos->end(); i++)
@@ -103,9 +103,7 @@ void *receiveHello(void *arg)
 		 return 0;
 	 }
 
-
 	char buffer[500];
-
 	bool sai = false;
 	while (!sai)
 	{
@@ -132,11 +130,35 @@ void *receiveHello(void *arg)
 }
 }
 
+void *check(void *arg)
+{
+	Nodo* nodo = static_cast<Nodo*>(arg);
+	string id = nodo->getId();
+
+	bool sai = false;
+	while (!sai)
+	{
+//		log(id, "checking neighborhood ");
+
+		// verifica todos os vizinhos, se recebeu hello
+		// senao elimina vizinho
+//		nodo->checkAlives();
+
+		// marca todos os vizinhos como mortos
+		nodo->killAll();
+
+		sleep(SLEEP_CHECK);
+	}
+
+	return 0;
+}
+
 Nodo::Nodo() {
 	x=0;
 	y=0;
 	threadSendHello=NULL;
 	threadReceiveHello=NULL;
+	threadCheck=NULL;
 	receiveThreadState = THREAD_RUNNING;
 	sendThreadState = THREAD_RUNNING;
 	versaoHello = 0;
@@ -226,7 +248,7 @@ void Nodo::startReadThread() {
 }
 
 void Nodo::startSendThread() {
-		int rc;
+	int rc;
 	log(id, "starting send thread");
 	rc = pthread_create(&threadSendHello, NULL,
 			sendHello,
@@ -234,17 +256,31 @@ void Nodo::startSendThread() {
 	if (rc){
 	         cout << "Error:unable to create send thread," << rc << endl;
 	}
-
 }
+
+
+void Nodo::startCheckThread() {
+	int rc;
+	log(id, "starting check thread");
+	rc = pthread_create(&threadCheck, NULL,
+			check,
+			(void *)this);
+	if (rc){
+		 cout << "Error:unable to create check thread," << rc << endl;
+	}
+}
+
+
 
 string Nodo::getVizinhosStr() {
 
-	// formato do hello: id'v'n | v1 | v2 | ... | vn,versao
+	// formato do hello: id'v'n | v1 | v2 | ... | vn ;mpr1;mpn;versao
 	std::ostringstream s;
 	s << getId() << "v" << vizinhos.size();
 	vector<Vertice>::const_iterator v;
 	for (v = vizinhos.begin(); v != vizinhos.end(); v++)
 	{
+//		if (*v != NUL)
 		s << "|" << (*v).getId();
 	}
 	s << ',' << versaoHello << ".";
@@ -265,7 +301,6 @@ void Nodo::updateTabela(string msg) {
 	vector<string> vizinhos;
 
 	// formato msg: nv#|n1|...|nz,versao.
-
 
 	// se nao tem . nem 'v', eh mensagem mal formada
 	if ((msg.find('v')==string::npos) ||
@@ -314,8 +349,6 @@ void Nodo::updateTabela(string msg) {
 			return;
 		}
 
-
-
 		// extrai vizinhos
 		int versao = tabelaExiste(nodo);
 		std::ostringstream s;
@@ -362,13 +395,16 @@ void Nodo::updateTabela(string msg) {
 	escolheMPR();
 }
 
+// ja atualiza status
 int Nodo::tabelaExiste(string n)
 {
-	vector<Tabela>::const_iterator t;
+	vector<Tabela>::iterator t;
 	for (t = tabela.begin(); t != tabela.end(); t++)
 	{
 		if ((*t).getId() == n)
 		{
+			log(id, "nodo vivo: " + (*t).getId());
+			(*t).setAlive(true);
 			return (*t).getVersao();
 		}
 	}
@@ -478,4 +514,26 @@ void Nodo::threadStop() {
 
 bool Nodo::isMPR() {
 	return MPR.size() > 0;
+}
+
+void Nodo::killAll() {
+	vector<Tabela>::iterator t;
+	for (t = tabela.begin(); t != tabela.end(); t++)
+	{
+		(*t).setAlive(false);
+	}
+}
+
+void Nodo::checkAlives() {
+
+	vector<Tabela>::iterator t;
+	for (t = tabela.begin(); t != tabela.end(); t++)
+	{
+		if (!(*t).isAlive())
+		{
+			log (id, "apagando nodo: " + (*t).getId());
+			// apaga vizinho
+			//tabela.erase(t);
+		}
+	}
 }

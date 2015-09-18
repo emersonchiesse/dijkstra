@@ -243,11 +243,11 @@ inline void MyFrame::OnDelete(wxCommandEvent& event) {
 		if (grafo.delNodo((*i)))
 		{
 			vector <string>::iterator i = nodosSelecionados.begin ();
-				i = std::find(nodosSelecionados.begin(),
-						nodosSelecionados.end(),
-						(*i));
-				if (i != nodosSelecionados.end() )
-					nodosSelecionados.erase(i);
+			i = std::find(nodosSelecionados.begin(),
+					nodosSelecionados.end(),
+					(*i));
+			if (i != nodosSelecionados.end() )
+				nodosSelecionados.erase(i);
 		}
 	}
 

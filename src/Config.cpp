@@ -10,7 +10,7 @@
 namespace setup {
 
 Config::Config(){
-	mostraPesos = false;
+	mostraPesos = true;
 	raioNodo = 5;
 	raioGrafo = 5;
 }
